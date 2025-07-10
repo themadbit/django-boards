@@ -1,0 +1,12 @@
+table,
+th,
+td {
+  margin: 0 auto;
+  border: 1px solid;
+  border-collapse: collapse;
+  width: 50%;
+}
+
+.boards-header {
+  text-align: center;
+}
