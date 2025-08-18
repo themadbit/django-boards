@@ -10,5 +10,14 @@ pkgs.mkShellNoCC {
   packages = with pkgs; [
     python313
     python312Packages.django
+    python312Packages.django-widget-tweaks
   ];
+  shellHook = ''
+    echo "The shell is loaded with aliases for easier dev:"
+
+    alias manage="python3 manage.py"
+    alias migrate="python3 manage.py migrate"
+    alias runserver="python3 manage.py runserver"
+
+  '';
 }
