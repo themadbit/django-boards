@@ -11,6 +11,7 @@ pkgs.mkShellNoCC {
     python313
     python312Packages.django
     python312Packages.django-widget-tweaks
+    python313Packages.markdown
   ];
   shellHook = ''
     echo "The shell is loaded with aliases for easier dev:"
