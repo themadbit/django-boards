@@ -9,8 +9,8 @@ in
 pkgs.mkShellNoCC {
   packages = with pkgs; [
     python313
-    python312Packages.django
-    python312Packages.django-widget-tweaks
+    python313Packages.django
+    python313Packages.django-widget-tweaks
     python313Packages.markdown
   ];
   shellHook = ''
