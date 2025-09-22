@@ -11,6 +11,7 @@
       python-decouple
       dj_database_url
       gunicorn
+      psycopg2-binary
     '';
   };
 }
