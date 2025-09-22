@@ -1,3 +1,5 @@
 # byte-compiled files
 __pycache__/
+.env
 .devenv/
+.devenv.flake.nix
