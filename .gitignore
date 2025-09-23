@@ -1,5 +1,13 @@
 # byte-compiled files
 __pycache__/
+
 .env
+
+# dev shell files to ignore
 .devenv/
 .devenv.flake.nix
+
+# terraforms to ignore
+**/.terraform/*
+*.tfstate
+*.tfstate.*
