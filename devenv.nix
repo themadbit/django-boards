@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   languages.python = {
@@ -9,7 +9,7 @@
       django-widget-tweaks
       Markdown
       python-decouple
-      dj_database_url
+      pre-commit
       gunicorn
       psycopg2-binary
     '';
