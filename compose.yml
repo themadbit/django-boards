@@ -1,4 +1,4 @@
-services: 
+services:
   django-boards:
     build:
       context: .
@@ -15,7 +15,7 @@ services:
       - ./.env
     volumes:
       - static_volume:/app/staticfiles
-  
+
   db:
     image: postgres:17
     environment:
