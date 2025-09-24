@@ -1,11 +1,6 @@
 services:
   django-boards:
-    build:
-      context: .
-      args:
-        - SECRET_KEY=${SECRET_KEY}
-        - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-        - DATABASE_URL=${DATABASE_URL}
+    build: .
     container_name: django-boards
     expose:
       - "8000"
