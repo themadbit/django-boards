@@ -2,12 +2,12 @@ name: CI Check
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
 
 env:
-  PYTHON_VERSION: '3.13'
+  PYTHON_VERSION: "3.13"
 
 jobs:
   code-quality:
@@ -15,57 +15,57 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout codedevelop
-      uses: actions/checkout@v4
+      - name: Checkout codedevelop
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
-    - name: Run Black (Code Formatting Check)
-      run: |
-        black --check --diff .
+      - name: Run Black (Code Formatting Check)
+        run: |
+          black --check --diff .
 
-    - name: Run isort (Import Sorting Check)
-      run: |
-        isort --check-only --diff .
+      - name: Run isort (Import Sorting Check)
+        run: |
+          isort --check-only --diff .
 
   build-and-test:
-    name: Build Docker Image and Run Tests
+    name: Build Test Image
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker Image
-      run: |
-        docker build \
-          -t django-boards:test .
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t django-boards:test .
 
-    - name: Run Django configuration check
-      run: |
-        docker run \
-          -e SECRET_KEY=test-secret-key \
-          -e ALLOWED_HOSTS=localhost \
-          -e DATABASE_URL=sqlite:///db.sqlite3 \
-          --rm django-boards:test python manage.py check
+      - name: Run Django configuration check
+        run: |
+          docker run \
+            -e SECRET_KEY=test-secret-key \
+            -e ALLOWED_HOSTS=localhost \
+            -e DATABASE_URL=sqlite:///db.sqlite3 \
+            --rm django-boards:test python manage.py check
 
-    - name: Run Django Unit Tests
-      run: |
-        docker run \
-          -e SECRET_KEY=test-secret-key \
-          -e ALLOWED_HOSTS=localhost \
-          -e DATABASE_URL=sqlite:///db.sqlite3 \
-          --rm django-boards:test python manage.py test
+      - name: Run Django Unit Tests
+        run: |
+          docker run \
+            -e SECRET_KEY=test-secret-key \
+            -e ALLOWED_HOSTS=localhost \
+            -e DATABASE_URL=sqlite:///db.sqlite3 \
+            --rm django-boards:test python manage.py test
