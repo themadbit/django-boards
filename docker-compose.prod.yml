@@ -1,0 +1,80 @@
+services:
+  django-boards:
+    image: ghcr.io/${GITHUB_REPOSITORY}:latest
+    container_name: django-boards
+    restart: unless-stopped
+    expose:
+      - "8000"
+    depends_on:
+      - db
+    env_file:
+      - .env.prod
+    environment:
+      - DEBUG=False
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+    volumes:
+      - static_volume:/app/staticfiles
+      - /opt/django-boards/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:17
+    container_name: django-boards-db
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"  # Only bind to localhost for security
+    volumes:
+      - /opt/django-boards/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    build: ./infra/nginx
+    container_name: django-boards-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static_volume:/app/staticfiles
+      - /opt/django-boards/data/ssl:/etc/nginx/ssl  # For future SSL certificates
+    depends_on:
+      django-boards:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  static_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/django-boards/data/static
+
+networks:
+  default:
+    name: django-boards-network
