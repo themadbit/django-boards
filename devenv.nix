@@ -7,6 +7,7 @@
     venv.requirements = ''
       Django
       django-widget-tweaks
+      dj-database-url
       Markdown
       python-decouple
       pre-commit
