@@ -1,9 +1,16 @@
 name: CD - Build and Deploy
 
+# on pr for faster feedback
+
 on:
-  push:
-    branches: [ main ]
+  pull_request:
+     branches: [ main ]
   workflow_dispatch:
+
+# on:
+#   push:
+#     branches: [ main ]
+#   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -42,7 +49,8 @@ jobs:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
           type=ref,event=branch
-          type=sha,prefix={{branch}}-
+          type=ref,event=pr
+          type=sha
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
