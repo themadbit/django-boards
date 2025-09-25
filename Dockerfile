@@ -32,6 +32,6 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
 USER appuser
-ENTRYPOINT ["/app/entrypoint.sh"]
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "boards-project.wsgi:application"]
