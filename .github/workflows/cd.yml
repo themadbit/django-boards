@@ -2,15 +2,15 @@ name: CD - Build and Deploy
 
 # on pr for faster feedback
 
-on:
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-
 # on:
-#   push:
+#   pull_request:
 #     branches: [ main ]
 #   workflow_dispatch:
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -68,7 +68,7 @@ jobs:
     name: Deploy to Production VM
     runs-on: ubuntu-latest
     needs: build-and-push
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
 
     # Add environment variables at job level for better debugging
     env:
