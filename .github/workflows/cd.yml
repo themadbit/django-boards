@@ -173,7 +173,7 @@ jobs:
              chmod 644 /opt/django-boards/docker-compose.prod.yml &&
              chmod 644 /opt/django-boards/infra/nginx/Dockerfile &&
              chmod 644 /opt/django-boards/infra/nginx/nginx.conf &&
-             echo "File permissions set"''
+             echo "File permissions set"'
 
       - name: Login to Container Registry on VM
         run: |
@@ -183,7 +183,7 @@ jobs:
 
       - name: Verify Docker volume mount directories
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/id_rsa \
             "$VM_USERNAME@$VM_HOST" \
             'echo "Verifying Docker volume mount directories..." &&
              ls -la /opt/django-boards/data/static &&
@@ -194,7 +194,7 @@ jobs:
 
       - name: Clear and fix data directory permissions
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          ssh -i ~/.ssh/id_rsa  \
             "$VM_USERNAME@$VM_HOST" \
             'echo "Clearing data directories to avoid permission conflicts..." &&
              sudo rm -rf /opt/django-boards/data/static/* &&
