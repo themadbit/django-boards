@@ -25,13 +25,9 @@ done
 echo "Running database migrations:"
 python3 manage.py migrate --noinput
 
-echo "Collecting static files:"
+# echo "Collecting static files:"
 # Ensure static files directory has proper permissions before collecting
-STATIC_DIR="staticfiles"
-mkdir -p "$STATIC_DIR"
-chmod 777 "$STATIC_DIR"
-
-python3 manage.py collectstatic --noinput --clear
+# python3 manage.py collectstatic --noinput --clear
 
 echo "Initialization complete. Starting application:"
 
