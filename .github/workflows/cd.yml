@@ -4,7 +4,7 @@ name: CD - Build and Deploy
 
 on:
   pull_request:
-     branches: [ main ]
+    branches: [ main ]
   workflow_dispatch:
 
 # on:
@@ -71,43 +71,101 @@ jobs:
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
 
+    # Add environment variables at job level for better debugging
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USERNAME: ${{ secrets.VM_USERNAME }}
+      VM_SSH_PRIVATE_KEY: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
+      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Debug - Check if secrets are available
+      run: |
+        echo "Checking secrets availability..."
+        echo "VM_HOST: $(if [ -n "$VM_HOST" ]; then echo "✅ Set"; else echo "❌ Not set"; fi)"
+        echo "VM_USERNAME: $(if [ -n "$VM_USERNAME" ]; then echo "✅ Set"; else echo "❌ Not set"; fi)"
+        echo "VM_SSH_PRIVATE_KEY: $(if [ -n "$VM_SSH_PRIVATE_KEY" ]; then echo "✅ Set (${#VM_SSH_PRIVATE_KEY} chars)"; else echo "❌ Not set"; fi)"
+        echo "DJANGO_SECRET_KEY: $(if [ -n "$DJANGO_SECRET_KEY" ]; then echo "✅ Set"; else echo "❌ Not set"; fi)"
+        echo "DATABASE_NAME: $(if [ -n "$DATABASE_NAME" ]; then echo "✅ Set"; else echo "❌ Not set"; fi)"
+        echo "DATABASE_USERNAME: $(if [ -n "$DATABASE_USERNAME" ]; then echo "✅ Set"; else echo "❌ Not set"; fi)"
+        echo "DATABASE_PASSWORD: $(if [ -n "$DATABASE_PASSWORD" ]; then echo "✅ Set"; else echo "❌ Not set"; fi)"
+
+    - name: Validate required secrets
+      run: |
+        error_count=0
+
+        if [ -z "$VM_HOST" ]; then
+          echo "❌ Error: VM_HOST secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ -z "$VM_USERNAME" ]; then
+          echo "❌ Error: VM_USERNAME secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ -z "$VM_SSH_PRIVATE_KEY" ]; then
+          echo "❌ Error: VM_SSH_PRIVATE_KEY secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ -z "$DJANGO_SECRET_KEY" ]; then
+          echo "❌ Error: DJANGO_SECRET_KEY secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ -z "$DATABASE_NAME" ]; then
+          echo "❌ Error: DATABASE_NAME secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ -z "$DATABASE_USERNAME" ]; then
+          echo "❌ Error: DATABASE_USERNAME secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ -z "$DATABASE_PASSWORD" ]; then
+          echo "❌ Error: DATABASE_PASSWORD secret is not set"
+          error_count=$((error_count + 1))
+        fi
+
+        if [ $error_count -gt 0 ]; then
+          echo "❌ Found $error_count missing secrets. Deployment cannot proceed."
+          exit 1
+        fi
+
+        echo "✅ All required secrets are available"
+
     - name: Setup SSH key
       run: |
-        # Validate SSH secrets
-        if [ -z "${{ secrets.VM_HOST }}" ]; then
-          echo "❌ Error: VM_HOST secret is not set"
-          exit 1
-        fi
-
-        if [ -z "${{ secrets.VM_SSH_PRIVATE_KEY }}" ]; then
-          echo "❌ Error: VM_SSH_PRIVATE_KEY secret is not set"
-          exit 1
-        fi
-
         # Setup SSH
         mkdir -p ~/.ssh
-        echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        echo "$VM_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
 
     - name: Create production environment file
       run: |
         cat > .env.prod << EOF
         # Django Settings
         DEBUG=False
-        SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
-        ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+        SECRET_KEY=$DJANGO_SECRET_KEY
+        ALLOWED_HOSTS=$ALLOWED_HOSTS
 
         # Database Configuration
-        DATABASE_NAME=${{ secrets.DATABASE_NAME }}
-        DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}
-        DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+        DATABASE_NAME=$DATABASE_NAME
+        DATABASE_USERNAME=$DATABASE_USERNAME
+        DATABASE_PASSWORD=$DATABASE_PASSWORD
 
-        DATABASE_URL=postgresql://${{ secrets.DATABASE_USERNAME }}:${{ secrets.DATABASE_PASSWORD }}@db:5432/${{ secrets.DATABASE_NAME }}
+        DATABASE_URL=postgresql://$DATABASE_USERNAME:$DATABASE_PASSWORD@db:5432/$DATABASE_NAME
 
         # GitHub Container Registry
         GITHUB_REPOSITORY=${{ github.repository }}
@@ -120,51 +178,51 @@ jobs:
       run: |
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           docker-compose.prod.yml \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/opt/django-boards/
+          "$VM_USERNAME@$VM_HOST:/opt/django-boards/"
 
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           scripts/deploy.sh \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/opt/django-boards/
+          "$VM_USERNAME@$VM_HOST:/opt/django-boards/"
 
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           .env.prod \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/opt/django-boards/
+          "$VM_USERNAME@$VM_HOST:/opt/django-boards/"
 
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           infra/django-boards.service \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }}:/opt/django-boards/infra/
+          "$VM_USERNAME@$VM_HOST:/opt/django-boards/infra/"
 
     - name: Create directories and set permissions on VM
       run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} \
+          "$VM_USERNAME@$VM_HOST" \
           'mkdir -p /opt/django-boards/infra && chmod +x /opt/django-boards/deploy.sh'
 
     - name: Login to Container Registry on VM
       run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} \
-          'echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin'
+          "$VM_USERNAME@$VM_HOST" \
+          "echo '$GITHUB_TOKEN' | docker login ghcr.io -u ${{ github.actor }} --password-stdin"
 
     - name: Deploy application
       run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} \
+          "$VM_USERNAME@$VM_HOST" \
           'cd /opt/django-boards && ./deploy.sh'
 
     - name: Health check
       run: |
-        echo "Waiting for application to start!"
+        echo "Waiting for application to start..."
         sleep 30
 
         # Check if services are running
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} \
+          "$VM_USERNAME@$VM_HOST" \
           'docker compose -f /opt/django-boards/docker-compose.prod.yml ps'
 
         # Test HTTP endpoint
         curl -f --retry 5 --retry-delay 10 --retry-connrefused \
-          http://${{ secrets.VM_HOST }}/ || {
+          "http://$VM_HOST/" || {
           echo "Health check failed!"
           exit 1
         }
