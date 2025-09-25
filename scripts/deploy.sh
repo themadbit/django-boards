@@ -44,7 +44,7 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" pull
 # Stop existing services
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
 
-docker compose up "$CONTAINER_NAME" -d
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up "$CONTAINER_NAME" -d
 docker exec -u 0 "$CONTAINER_NAME" python manage.py collectstatic --noinput
 
 # Start services
