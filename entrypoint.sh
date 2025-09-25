@@ -32,5 +32,5 @@ python3 manage.py migrate --noinput
 echo "Initialization complete. Starting application:"
 
 # Execute the CMD from Dockerfile (gunicorn)
-echo "🚀 Starting Gunicorn server:"
+echo "Starting Gunicorn server:"
 exec "$@"
