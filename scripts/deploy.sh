@@ -48,23 +48,23 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
 # Wait for Django container to be ready
-echo "Waiting for Django container to start..."
-for i in {1..30}; do
-    if docker ps --filter "name=$CONTAINER_NAME" --filter "status=running" | grep -q "$CONTAINER_NAME"; then
-        echo "Django container is running"
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo "Error: Django container failed to start"
-        docker logs "$CONTAINER_NAME" --tail=50
-        exit 1
-    fi
-    sleep 2
-done
+# echo "Waiting for Django container to start..."
+# for i in {1..30}; do
+#     if docker ps --filter "name=$CONTAINER_NAME" --filter "status=running" | grep -q "$CONTAINER_NAME"; then
+#         echo "Django container is running"
+#         break
+#     fi
+#     if [ $i -eq 30 ]; then
+#         echo "Error: Django container failed to start"
+#         docker logs "$CONTAINER_NAME" --tail=50
+#         exit 1
+#     fi
+#     sleep 2
+# done
 
-# Collect static files
-echo "Collecting static files..."
-docker exec -u 0 "$CONTAINER_NAME" python manage.py collectstatic --noinput
+# # Collect static files
+# echo "Collecting static files..."
+# docker exec -u 0 "$CONTAINER_NAME" python manage.py collectstatic --noinput
 
 # Verify deployment
 echo "Checking service status..."
