@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
+set -e
+
+CONTAINER_NAME="django-boards"
+
 echo "Waiting for database to be ready:"
 
 for i in {1..30}; do
@@ -21,8 +25,13 @@ done
 echo "Running database migrations:"
 python3 manage.py migrate --noinput
 
-# echo "Collecting static files:"
-# python3 manage.py collectstatic --noinput --clear
+echo "Collecting static files:"
+# Ensure static files directory has proper permissions before collecting
+STATIC_DIR="staticfiles"
+mkdir -p "$STATIC_DIR"
+chmod 777 "$STATIC_DIR"
+
+python3 manage.py collectstatic --noinput --clear
 
 echo "Initialization complete. Starting application:"
 
