@@ -1,0 +1,84 @@
+---
+- name: Setup Ubuntu server with PostgreSQL and Nginx
+  hosts: all
+  become: yes
+  vars:
+    config_file_source: "./config.txt"
+    config_file_dest: "/opt/config.txt"
+    devops_group: "devops"
+
+  tasks:
+    # Create the devops group if it doesn't exist
+    - name: Create devops group
+      group:
+        name: "{{ devops_group }}"
+        state: present
+
+    - name: Copy config file to /opt/ directory
+      copy:
+        src: "{{ config_file_source }}"
+        dest: "{{ config_file_dest }}"
+        owner: root
+        group: "{{ devops_group }}"
+        mode: "0660"
+      notify: restart_nginx
+
+    - name: Install PostgreSQL
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - python3-psycopg2
+        state: latest
+
+    - name: Start and enable PostgreSQL service
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Start and enable Nginx service
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create simple index page
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Server Setup Complete</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  h1 { color: #333; }
+                  .status { background: #e8f5e8; padding: 20px; border-radius: 5px; }
+              </style>
+          </head>
+          <body>
+              <h1>Ansible Server Setup Complete!</h1>
+              <div class="status">
+                  <p><strong> PostgreSQL:</strong> Installed and running</p>
+                  <p><strong>Nginx:</strong> Installed and running</p>
+                  <p><strong>Config file:</strong> Deployed to /opt/config.txt</p>
+                  <p><strong>DevOps group:</strong> Created with file access</p>
+              </div>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: "0644"
+      notify: restart_nginx
+
+  handlers:
+    - name: restart_nginx
+      systemd:
+        name: nginx
+        state: restarted
